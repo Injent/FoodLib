@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.FoodLib.Starting" parent="Theme.SplashScreen">
+        <item name="android:windowSplashScreenBackground">#ffeff0f6</item>
+
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_tea</item>
+        <item name="windowSplashScreenAnimationDuration">200</item>
+
+        <item name="postSplashScreenTheme">@style/Theme.FoodLib</item>
+    </style>
+</resources>
