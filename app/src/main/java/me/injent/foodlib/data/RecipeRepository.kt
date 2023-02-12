@@ -17,40 +17,50 @@
 package me.injent.foodlib.data
 
 import kotlinx.coroutines.flow.Flow
-import me.injent.foodlib.data.local.database.Ingredient
-import me.injent.foodlib.data.local.database.Recipe
 import me.injent.foodlib.data.local.database.RecipeDao
+import me.injent.foodlib.data.local.database.RecipeEntity
+import me.injent.foodlib.domain.model.Category
+import me.injent.foodlib.domain.model.Ingredient
 import me.injent.foodlib.util.RECENT_RECIPES_LIMIT
 import javax.inject.Inject
 
 interface RecipeRepository {
-    val recipes: Flow<List<Recipe>>
-    val recentRecipes: Flow<List<Recipe>>
-    suspend fun findById(recipeId: Int): Recipe?
-    suspend fun add(name: String, ingredients: List<Ingredient>): Long
-    suspend fun update(recipe: Recipe)
-    suspend fun searchByName(query: String): List<Recipe>
+    val recipes: Flow<List<RecipeEntity>>
+    val recentRecipes: Flow<List<RecipeEntity>>
+    suspend fun findById(recipeId: Long): RecipeEntity?
+    suspend fun add(name: String, content: String, ingredients: List<Ingredient>, category: Category): Long
+    suspend fun update(recipe: RecipeEntity)
+    suspend fun searchByName(query: String): List<RecipeEntity>
+    suspend fun deleteRecipe(id: Long)
+    suspend fun findByCategory(category: Category, limit: Int): List<RecipeEntity>
 }
 
 class DefaultRecipeRepository @Inject constructor(
     private val recipeDao: RecipeDao
 ) : RecipeRepository {
 
-    override val recentRecipes: Flow<List<Recipe>> =
+    override val recentRecipes: Flow<List<RecipeEntity>> =
         recipeDao.getRecentRecipesWithoutContent(RECENT_RECIPES_LIMIT)
 
-    override val recipes: Flow<List<Recipe>> =
+    override val recipes: Flow<List<RecipeEntity>> =
         recipeDao.getRecipes()
 
-    override suspend fun findById(recipeId: Int) = recipeDao.findRecipe(recipeId)
+    override suspend fun findById(recipeId: Long) = recipeDao.findRecipe(recipeId)
 
-    override suspend fun add(name: String, ingredients: List<Ingredient>): Long {
-        return recipeDao.insertRecipe(Recipe(name, ingredients))
+    override suspend fun add(name: String, content: String, ingredients: List<Ingredient>, category: Category): Long {
+        return recipeDao.insertRecipe(RecipeEntity(name, content, ingredients, category))
     }
 
     override suspend fun searchByName(query: String) = recipeDao.findRecipesByName(query)
 
-    override suspend fun update(recipe: Recipe) {
+    override suspend fun update(recipe: RecipeEntity) {
         recipeDao.updateRecipe(recipe)
     }
+
+    override suspend fun deleteRecipe(id: Long) {
+        recipeDao.deleteRecipe(id)
+    }
+
+    override suspend fun findByCategory(category: Category, limit: Int) =
+        recipeDao.findByCategory(category.name, limit)
 }

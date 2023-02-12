@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,11 +32,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import me.injent.foodlib.R
 import me.injent.foodlib.ui.theme.FoodLibTheme
+import me.injent.foodlib.util.clearFocusOnKeyboardDismiss
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -48,12 +46,10 @@ fun FoodLibSearchBar(
     contentColor: Color,
     placeholder: String,
     hintColor: Color,
-    textStyle: TextStyle = TextStyle(
-        color = contentColor,
-        fontSize = 16.sp
-    ),
+    textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
     onValueChanged: (value: String) -> Unit,
-    focusedOnInit: Boolean = false
+    focusedOnInit: Boolean = false,
+    onDismiss: (() -> Unit)? = null
 ) {
     var focused by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
@@ -71,8 +67,9 @@ fun FoodLibSearchBar(
         modifier = modifier
             .onFocusChanged { focusState -> focused = (focusState.isFocused) }
             .focusRequester(focusRequester)
-            .background(color, shape)
-            .clip(shape),
+            .clip(shape)
+            .background(color)
+            .clearFocusOnKeyboardDismiss(onDismissKeyboard = { onDismiss?.invoke() }),
         value = text,
         onValueChange = {
             text = it
@@ -102,7 +99,7 @@ fun FoodLibSearchBar(
                             contentDescription = null
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(
+                        LargeBodyText(
                             text = placeholder,
                             color = hintColor
                         )
@@ -159,23 +156,6 @@ fun FoodLibSearchBar(
             visualTransformation = VisualTransformation.None,
             interactionSource = interactionSource,
             contentPadding = PaddingValues(0.dp)
-        )
-    }
-}
-
-@Preview(showBackground = false)
-@Composable
-private fun SearchBarPreview() {
-    FoodLibTheme {
-        FoodLibSearchBar(
-            modifier = Modifier
-                .height(40.dp)
-                .fillMaxWidth(),
-            color = FoodLibTheme.colorScheme.surface,
-            contentColor = FoodLibTheme.colorScheme.textPrimary,
-            placeholder = "Искать",
-            hintColor = FoodLibTheme.colorScheme.textSecondary,
-            onValueChanged = {}
         )
     }
 }

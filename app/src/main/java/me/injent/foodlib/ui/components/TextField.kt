@@ -10,6 +10,8 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -19,6 +21,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.sp
 import me.injent.foodlib.ui.theme.FoodLibTheme
 import me.injent.foodlib.util.clearFocusOnKeyboardDismiss
+import me.injent.foodlib.util.conditional
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -32,13 +35,20 @@ fun TransparentTextField(
         fontWeight = FontWeight.SemiBold
     ),
     placeholder: String? = null,
-    onDone: (() -> Unit)? = null
+    onDone: (() -> Unit)? = null,
+    onFocusChange: ((FocusState) -> Unit)? = null,
+    onDissmissKeyboard: (() -> Unit)? = null,
+    maxLines: Int = Int.MAX_VALUE
 ) {
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
     TextField(
-        modifier = modifier.clearFocusOnKeyboardDismiss(),
+        modifier = modifier
+            .clearFocusOnKeyboardDismiss(onDismissKeyboard = { onDissmissKeyboard?.invoke() })
+            .conditional(onFocusChange != null) {
+                onFocusChanged(onFocusChange!!)
+            },
         value = value,
         onValueChange = onValueChange,
         colors = TextFieldDefaults.textFieldColors(
@@ -52,7 +62,7 @@ fun TransparentTextField(
                 backgroundColor = FoodLibTheme.colorScheme.primary.copy(.1f)
             )
         ),
-        singleLine = true,
+        maxLines = maxLines,
         textStyle = textStyle,
         keyboardActions = KeyboardActions(
             onDone = {

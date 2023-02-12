@@ -16,91 +16,103 @@
 
 package me.injent.foodlib.ui.screens.home
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
 import me.injent.foodlib.R
-import me.injent.foodlib.data.local.database.Recipe
+import me.injent.foodlib.domain.model.Category
 import me.injent.foodlib.ui.components.*
-import me.injent.foodlib.ui.navigation.NavActions
+import me.injent.foodlib.ui.theme.FoodLibIcons
 import me.injent.foodlib.ui.theme.FoodLibTheme
 import me.injent.foodlib.util.ignoreHorizontalParentPadding
 
 @Composable
-fun HomeScreen(
-    contentPaddingValues: PaddingValues = PaddingValues(16.dp),
-    navActions: NavActions,
+fun HomeRoute(
+    onNavigateToBrowse: () -> Unit,
+    onRecipeClick: (id: Long) -> Unit,
+    onCreateRecipe: () -> Unit,
+    onDraftClick: (draftId: String) -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-    Column(
-        Modifier.padding(paddingValues = contentPaddingValues),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        FoodLibSearchBar(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(40.dp)
-                .clickable { navActions.navigateToBrowser() },
-            color = FoodLibTheme.colorScheme.surface,
-            contentColor = FoodLibTheme.colorScheme.textPrimary,
-            placeholder = stringResource(id = R.string.search_hint),
-            hintColor = FoodLibTheme.colorScheme.textSecondary.copy(.75f),
-            onValueChanged = {}
-        )
-        Categories(
-            modifier = Modifier.ignoreHorizontalParentPadding(16.dp),
-            categories = categories,
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp),
-            onCategorySelected = { navActions.navigateToCategory(it.name) }
-        )
-        HeaderText(text = stringResource(id = R.string.recent))
-    }
+    val recipesByCategoryState by viewModel.recipesByCategory.collectAsStateWithLifecycle()
+    val draftsUiState by viewModel.draftsUiState.collectAsStateWithLifecycle()
+
+    HomeScreen(
+        draftsUiState = draftsUiState,
+        filteredRecipes = recipesByCategoryState,
+        onSearchBarClick = onNavigateToBrowse,
+        onCategoryClick = { viewModel.setCategory(it) },
+        onRecipeClick = onRecipeClick,
+        onCreateRecipe = onCreateRecipe,
+        onDraftClick = onDraftClick
+    )
 }
 
-// Previews
-
-@Preview(showBackground = true)
 @Composable
-private fun DefaultPreview() {
-    FoodLibTheme {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .background(FoodLibTheme.colorScheme.background)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            FoodLibSearchBar(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp),
-                color = FoodLibTheme.colorScheme.surface,
-                contentColor = FoodLibTheme.colorScheme.textPrimary,
-                shape = RoundedCornerShape(12.dp),
-                placeholder = "Искать",
-                hintColor = FoodLibTheme.colorScheme.textSecondary.copy(.75f),
-                onValueChanged = {}
-            )
-            Categories(
-                modifier = Modifier.ignoreHorizontalParentPadding(16.dp),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp),
-                categories = categories,
-                onCategorySelected = {}
-            )
-            HeaderText(text = stringResource(id = R.string.recent))
+fun HomeScreen(
+    draftsUiState: DraftsUiState,
+    filteredRecipes: RecipesByCategoryState,
+    onSearchBarClick: () -> Unit,
+    onCategoryClick: (Category) -> Unit,
+    onRecipeClick: (id: Long) -> Unit,
+    onCreateRecipe: () -> Unit,
+    onDraftClick: (draftId: String) -> Unit
+) {
+    val state = rememberLazyGridState()
+
+    LazyVerticalGrid(
+        modifier = Modifier.fillMaxSize(),
+        columns = GridCells.Adaptive(300.dp),
+        contentPadding = PaddingValues(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+        state = state,
+    ) {
+        item {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    modifier = Modifier.size(32.dp),
+                    imageVector = FoodLibIcons.Menu,
+                    tint = FoodLibTheme.colorScheme.secondary,
+                    contentDescription = null
+                )
+                FoodLibIconButton(
+                    modifier = Modifier.height(48.dp),
+                    onClick = onCreateRecipe,
+                    drawable = R.drawable.ic_book,
+                    text = stringResource(id = R.string.create)
+                )
+            }
         }
+        item {
+            LargeHeadLineText(text = stringResource(id = R.string.menu))
+        }
+        searchBar(onClick = onSearchBarClick)
+        drafts(
+            state = draftsUiState,
+            onDraftClick = { onDraftClick(it.id) }
+        )
+        categories(
+            modifier = Modifier.ignoreHorizontalParentPadding(16.dp),
+            onClick = { category -> onCategoryClick(category) },
+        )
+        filteredRecipes(
+            state = filteredRecipes,
+            onRecipeClicked = { recipe -> onRecipeClick(recipe.id) },
+            onCreateRecipeRequest = { onRecipeClick(-1) }
+        )
     }
 }

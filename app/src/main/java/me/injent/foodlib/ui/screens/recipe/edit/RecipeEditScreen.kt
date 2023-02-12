@@ -1,9 +1,12 @@
 package me.injent.foodlib.ui.screens.recipe.edit
 
+import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,12 +21,9 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -33,11 +33,14 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.injent.foodlib.R
-import me.injent.foodlib.data.local.database.Ingredient
+import me.injent.foodlib.data.ResultOf
+import me.injent.foodlib.domain.model.Ingredient
 import me.injent.foodlib.ui.components.*
-import me.injent.foodlib.ui.screens.recipe.RecipeViewModel
+import me.injent.foodlib.ui.theme.FoodLibIcons
 import me.injent.foodlib.ui.theme.FoodLibTheme
+import me.injent.foodlib.util.*
 
+@SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeEditScreen(
@@ -46,19 +49,54 @@ fun RecipeEditScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    BackHandler {
-        viewModel.saveRecipe()
+    var confirmExitDialogOpen by remember { mutableStateOf(false) }
+
+    val onBackLogic = remember {
+        {
+            confirmExitDialogOpen = false
+            if (viewModel.isLoadedFromDatabase) {
+                val saved = viewModel.saveRecipe()
+                if (saved) onBack()
+            } else {
+                viewModel.saveDraft()
+            }
+        }
+    }
+    BackHandler { onBackLogic() }
+
+//    TODO("Error: Duplicate saving draft on stop lifecycle")
+//    OnLifecycleEvent { _, event ->
+//        when (event) {
+//            Lifecycle.Event.ON_STOP -> {
+//                onBackLogic()
+//            }
+//            else -> Unit
+//        }
+//    }
+
+    if (confirmExitDialogOpen && !uiState.isRecipeSaved) {
+        ConfirmDialog(
+            alert = stringResource(id = R.string.dialog_confirm_exit_text),
+            onConfirm = onBackLogic,
+            onCancel = { confirmExitDialogOpen = false }
+        )
     }
 
-    var dialogOpen by remember { mutableStateOf(false) }
+    var ingredientsDialogOpen by remember { mutableStateOf(false) }
+    AnimatedVisibility(visible = ingredientsDialogOpen && !uiState.isLoading) {
+        val searchText by viewModel.searchText.collectAsStateWithLifecycle()
+        val ingredientsFullList by viewModel.filteredIngredients.collectAsStateWithLifecycle()
 
-    AnimatedVisibility(visible = dialogOpen && !uiState.isLoading) {
         IngredientSelecterDialog(
-            ingredients = uiState.totalIngredients,
+            searchText = searchText,
+            ingredients = ingredientsFullList,
             addedIngredients = uiState.ingredients.toImmutableList(),
             onAdd = { viewModel.addIngredient(it) },
             onRemove = { viewModel.removeIngredient(it) },
-            onClose = { dialogOpen = false }
+            onClose = { ingredientsDialogOpen = false; viewModel.onSearchTextChange("") },
+            onSearchTextChange = {
+                viewModel.onSearchTextChange(it)
+            }
         )
     }
 
@@ -70,27 +108,36 @@ fun RecipeEditScreen(
         topBar = {
             LocalTopAppBar(
                 recipeName = uiState.name,
-                onClose = { viewModel.saveRecipe(); onBack() },
-                onNameChanged = {
-                    viewModel.updateName(it)
+                onClose = onBackLogic,
+                onNameChanged = { viewModel.updateName(it) },
+                onDeleteRequest = {
+                    onBack()
+                    viewModel.deleteDraftOrRecipe()
                 },
-                onIngredientsMenuClick = {
-                    dialogOpen = true
-                }
+                onSave = {
+                    val saved = viewModel.saveRecipe()
+                    if (saved)
+                        onBack()
+                },
+                isSaved = uiState.isRecipeSaved
             )
         },
         containerColor = Color.Transparent
     ) { paddingValues ->
         AddEditRecipeContent(
             modifier = Modifier
-                .padding(paddingValues)
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp),
+                .padding(paddingValues),
             isLoading = uiState.isLoading,
             ingredients = uiState.ingredients,
-            onIngredientChange = { viewModel.updateIngredient(it) }
+            onIngredientChange = { viewModel.updateIngredient(it) },
+            onContentChange = { viewModel.updateContent(it) },
+            onIngredientDelete = { viewModel.removeIngredient(it.name) },
+            onAddIngredient = { ingredientsDialogOpen = true },
+            content = uiState.content
         )
     }
 
+    // TODO("Create custom snackbar")
     uiState.userMessage?.let { userMessage ->
         val snackbarText = stringResource(userMessage)
         LaunchedEffect(snackbarHostState, viewModel, userMessage, snackbarText) {
@@ -105,42 +152,82 @@ private fun AddEditRecipeContent(
     modifier: Modifier = Modifier,
     isLoading: Boolean,
     ingredients: List<Ingredient>,
-    onIngredientChange: (Ingredient) -> Unit
+    onIngredientChange: (Ingredient) -> Unit,
+    onIngredientDelete: (Ingredient) -> Unit,
+    onContentChange: (String) -> Unit,
+    onAddIngredient: () -> Unit,
+    content: String
 ) {
     if (isLoading) {
         CircularProgressIndicator()
     } else{
         Column(
             modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .clip(RoundedCornerShape(12.dp))
+                .fillMaxSize()
         ) {
-            IngredientsList(
-                ingredients = ingredients,
-                onIngredientChange = onIngredientChange
+            var textFieldFullSize by remember { mutableStateOf(false) }
+
+            AnimatedVisibility(visible = !textFieldFullSize) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Ingredients(
+                        ingredients = ingredients,
+                        onIngredientChange = onIngredientChange,
+                        onDelete = onIngredientDelete,
+                        onAddIngredient = onAddIngredient
+                    )
+                }
+            }
+
+            TransparentTextField(
+                modifier = Modifier
+                    .weight(.8f)
+                    .fillMaxSize()
+                    .background(FoodLibTheme.colorScheme.container),
+                value = content,
+                onValueChange = { onContentChange(it) },
+                textStyle = MaterialTheme.typography.bodyLarge,
+                onFocusChange = { textFieldFullSize = it.isFocused }
             )
+            Spacer(modifier = Modifier.conditional(!textFieldFullSize) { weight(.2f) })
         }
     }
 }
 
 @Composable
-private fun IngredientsList(
+private fun Ingredients(
     ingredients: List<Ingredient>,
-    onIngredientChange: (Ingredient) -> Unit
+    onIngredientChange: (Ingredient) -> Unit,
+    onAddIngredient: () -> Unit,
+    onDelete: (Ingredient) -> Unit
 ) {
     var editableIngredient by remember { mutableStateOf<Ingredient?>(null) }
     var inputDialogOpen by remember { mutableStateOf(false) }
 
     for (ingredient in ingredients) {
+        val isLast = remember(ingredients) { ingredients.last() == ingredient }
         EditableIngredient(
             ingredient = ingredient,
-            onClick = {
+            onEdit = {
                 editableIngredient = ingredient
                 inputDialogOpen = true
-            }
+            },
+            isLast = isLast,
+            onDelete = { onDelete(ingredient) }
         )
     }
+    FoodLibIconButton(
+        modifier = Modifier
+            .fillMaxWidth(),
+        onClick = onAddIngredient,
+        imageVector = FoodLibIcons.AddCircle,
+        shape = RoundedCornerShape(12.dp),
+        text = stringResource(id = R.string.add_ingredient)
+    )
 
     if (inputDialogOpen && editableIngredient != null) {
         val scope = rememberCoroutineScope()
@@ -148,10 +235,11 @@ private fun IngredientsList(
         InputDialog(
             title = stringResource(id = R.string.set_amount),
             initialValue = editableIngredient!!.amount,
+            metrics = editableIngredient!!.avalaibleMetrics,
             onDismissRequest = { inputDialogOpen = false },
-            onDone = {
+            onDone = { value, metric ->
                 inputDialogOpen = false
-                onIngredientChange(editableIngredient!!.copy(amount = it))
+                onIngredientChange(editableIngredient!!.copy(amount = value, metric = metric))
                 scope.launch {
                     delay(1000)
                     editableIngredient = null
@@ -164,43 +252,42 @@ private fun IngredientsList(
 @Composable
 private fun EditableIngredient(
     ingredient: Ingredient,
-    onClick: () -> Unit
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    isLast: Boolean
 ) {
-    Box(
+    Row(
         modifier = Modifier
-            .clickable { onClick() }
-            .background(FoodLibTheme.colorScheme.surface)
-            .padding(16.dp),
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-        ) {
-            Text(
-                text = ingredient.name,
-                fontWeight = FontWeight.Medium,
-                fontSize = 18.sp,
-                color = FoodLibTheme.colorScheme.textPrimary
-            )
-            Text(
-                text = "${ingredient.amount} ${ingredient.metric}",
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                color = FoodLibTheme.colorScheme.textSecondary
+        IconButton(onClick = onEdit) {
+            Icon(
+                imageVector = FoodLibIcons.Menu,
+                tint = FoodLibTheme.colorScheme.primary,
+                contentDescription = null
             )
         }
-        Icon(
-            modifier = Modifier.align(Alignment.CenterEnd),
-            imageVector = Icons.Rounded.Edit,
-            tint = FoodLibTheme.colorScheme.textSecondary,
-            contentDescription = null
-        )
-        FoodLibDivider(
+
+        Row(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .offset(y = 16.dp),
-            color = FoodLibTheme.colorScheme.border
-        )
+                .fillMaxWidth()
+                .padding(16.dp)
+                .weight(1f),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            LargeBodyText(text = ingredient.name)
+            LargeBodyText(text = "${ingredient.amount} ${ingredient.metric}")
+        }
+
+        IconButton(onClick = onDelete) {
+            Icon(
+                imageVector = FoodLibIcons.Delete,
+                tint = FoodLibTheme.colorScheme.primary,
+                contentDescription = null
+            )
+        }
     }
 }
 
@@ -210,11 +297,14 @@ private fun LocalTopAppBar(
     recipeName: String,
     onClose: () -> Unit,
     onNameChanged: (String) -> Unit,
-    onIngredientsMenuClick: () -> Unit
+    onDeleteRequest: () -> Unit,
+    onSave: () -> Unit,
+    isSaved: Boolean
 ) {
     TopAppBar(
+        modifier = Modifier.foodLibShadow(),
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color.Transparent,
+            containerColor = FoodLibTheme.colorScheme.surface,
             titleContentColor = FoodLibTheme.colorScheme.textPrimary,
             actionIconContentColor = FoodLibTheme.colorScheme.textPrimary
         ),
@@ -236,16 +326,54 @@ private fun LocalTopAppBar(
                     modifier = Modifier,
                     value = recipeName,
                     onValueChange = onNameChanged,
-                    placeholder = stringResource(id = R.string.name_placeholder)
+                    placeholder = stringResource(id = R.string.name_placeholder),
+                    maxLines = 1
                 )
             }
         },
         actions = {
-            IconButton(onClick = onIngredientsMenuClick) {
-                Icon(imageVector = Icons.Rounded.ShoppingCart, contentDescription = null)
+            var expanded by remember { mutableStateOf(false) }
+            AnimatedVisibility(
+                visible = !isSaved,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                IconButton(onClick = onSave) {
+                    Icon(
+                        painter = painterResource(id = FoodLibIcons.Save),
+                        tint = FoodLibTheme.colorScheme.textPrimary,
+                        contentDescription = null
+                    )
+                }
             }
-            IconButton(onClick = onClose) {
-                Icon(imageVector = Icons.Rounded.MoreVert, contentDescription = null)
+            IconButton(
+                onClick = { expanded = !expanded }
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.MoreVert,
+                    tint = FoodLibTheme.colorScheme.textPrimary,
+                    contentDescription = null
+                )
+            }
+            AnimatedVisibility(
+                visible = expanded,
+            ) {
+                DropdownMenu(
+                    modifier = Modifier
+                        .background(FoodLibTheme.colorScheme.surface)
+                        .clip(RoundedCornerShape(12.dp)),
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                ) {
+                    DropdownMenuItem(
+                        text = {
+                            MediumBodyText(
+                                text = stringResource(id = R.string.delete)
+                            )
+                        },
+                        onClick = onDeleteRequest
+                    )
+                }
             }
         }
     )
@@ -256,10 +384,12 @@ private fun LocalTopAppBar(
 )
 @Composable
 fun IngredientSelecterDialog(
-    ingredients: ImmutableList<Ingredient>,
+    ingredients: List<Ingredient>,
+    searchText: String,
+    onSearchTextChange: (String) -> Unit,
     addedIngredients: ImmutableList<Ingredient>,
     onAdd: (Ingredient) -> Unit,
-    onRemove: (Ingredient) -> Unit,
+    onRemove: (name: String) -> Unit,
     onClose: () -> Unit
 ) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -268,12 +398,10 @@ fun IngredientSelecterDialog(
                 .fillMaxSize()
                 .clip(MaterialTheme.shapes.medium)
         ) {
-            var filterText by remember { mutableStateOf("") }
-
             TextField(
                 modifier = Modifier.fillMaxWidth(),
-                value = filterText,
-                onValueChange = { filterText = it },
+                value = searchText,
+                onValueChange = { onSearchTextChange(it) },
                 colors = TextFieldDefaults.textFieldColors(
                     textColor = FoodLibTheme.colorScheme.textPrimary,
                     containerColor = FoodLibTheme.colorScheme.container,
@@ -304,26 +432,19 @@ fun IngredientSelecterDialog(
                 singleLine = true
             )
 
-            val items by produceState(initialValue = emptyList(), key1 = filterText) {
-                value = if (filterText.isEmpty()) {
-                    ingredients
-                } else {
-                    ingredients.filter { it.name.lowercase().contains(filterText) }
-                }
-            }
-
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(FoodLibTheme.colorScheme.surface)
             ) {
                 items(
-                    items = items,
+                    items = ingredients,
                     key = { it.name }
                 ) { ingredient ->
-                    var added by remember { mutableStateOf(false) }
-                    LaunchedEffect(key1 = addedIngredients) {
-                        added = addedIngredients.any { it.name == ingredient.name }
+                    var added by remember { mutableStateOf<ResultOf<Boolean>>(ResultOf.Loading) }
+
+                    LaunchedEffect(addedIngredients) {
+                        added = ResultOf.Success(addedIngredients.any { it.name == ingredient.name })
                     }
 
                     IngredientInDialog(
@@ -338,7 +459,7 @@ fun IngredientSelecterDialog(
                             onAdd(ingredient)
                         },
                         onRemove = {
-                            onRemove(ingredient)
+                            onRemove(ingredient.name)
                         }
                     )
                 }
@@ -351,7 +472,7 @@ fun IngredientSelecterDialog(
 private fun IngredientInDialog(
     modifier: Modifier = Modifier,
     ingredientName: String,
-    added: Boolean,
+    added: ResultOf<Boolean>,
     onAdd: () -> Unit,
     onRemove: () -> Unit
 ) {
@@ -365,21 +486,32 @@ private fun IngredientInDialog(
             color = FoodLibTheme.colorScheme.textPrimary
         )
 
-        val buttonColor by animateColorAsState(
-            targetValue = if (added) FoodLibTheme.colorScheme.error else FoodLibTheme.colorScheme.success
-        )
-        val text = if (added) stringResource(id = R.string.remove) else stringResource(id = R.string.add)
+        if (added is ResultOf.Success) {
+            val buttonColor by animateColorAsState(
+                targetValue = if (added.data) FoodLibTheme.colorScheme.error else FoodLibTheme.colorScheme.success
+            )
+            val text = if (added.data) stringResource(id = R.string.remove) else stringResource(id = R.string.add)
 
-        SmallTextButton(
-            text = text,
-            onClick = if (added) onRemove else onAdd,
-            textColor = buttonColor,
-            modifier = Modifier
-                .width(128.dp)
-                .background(
-                    buttonColor.copy(.1f),
-                    RoundedCornerShape(10.dp)
-                )
-        )
+            FoodLibTextButton(
+                text = text,
+                onClick = if (added.data) onRemove else onAdd,
+                textColor = buttonColor,
+                modifier = Modifier
+                    .width(128.dp)
+                    .background(
+                        buttonColor.copy(.1f),
+                        RoundedCornerShape(10.dp)
+                    )
+            )
+        } else if (added is ResultOf.Loading) {
+            FoodLibTextButton(
+                text = "",
+                onClick = {},
+                modifier = Modifier
+                    .width(128.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .shimmerEffect()
+            )
+        }
     }
 }

@@ -2,15 +2,21 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "e204a42ad0f1dcc132a276cd7ffe48a3",
+    "identityHash": "1a5c2e9affc522787c703976c4438a98",
     "entities": [
       {
         "tableName": "recipes",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `ingredients` TEXT, `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `content` TEXT NOT NULL, `ingredients` TEXT, `category` TEXT NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `last_used_date` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "name",
             "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "content",
+            "columnName": "content",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -21,8 +27,20 @@
             "notNull": false
           },
           {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
             "fieldPath": "id",
             "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUsedDate",
+            "columnName": "last_used_date",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -40,7 +58,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e204a42ad0f1dcc132a276cd7ffe48a3')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1a5c2e9affc522787c703976c4438a98')"
     ]
   }
 }

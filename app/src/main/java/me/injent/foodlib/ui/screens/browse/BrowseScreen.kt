@@ -6,28 +6,26 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import me.injent.foodlib.R
-import me.injent.foodlib.data.local.database.Recipe
+import me.injent.foodlib.data.local.database.RecipeEntity
 import me.injent.foodlib.ui.components.FoodLibSearchBar
-import me.injent.foodlib.ui.components.FoodLibSurface
 import me.injent.foodlib.ui.navigation.NavActions
 import me.injent.foodlib.ui.theme.FoodLibTheme
 
@@ -54,7 +52,8 @@ fun BrowseScreen(
             onValueChanged = {
                 viewModel.setSearchText(it)
             },
-            focusedOnInit = true
+            focusedOnInit = true,
+            onDismiss = { navActions.navigateToHome() }
         )
         BrowseList(
             isLoading = uiState.isLoading,
@@ -68,8 +67,8 @@ fun BrowseScreen(
 fun BrowseList(
     modifier: Modifier = Modifier,
     isLoading: Boolean,
-    recipes: ImmutableList<Recipe>,
-    onRecipeSelected: (recipe: Recipe) -> Unit
+    recipes: ImmutableList<RecipeEntity>,
+    onRecipeSelected: (recipe: RecipeEntity) -> Unit
 ) {
     if (isLoading) Text(text = "Loading...")
     LazyColumn(
@@ -87,61 +86,39 @@ fun BrowseList(
 
 @Composable
 private fun RecipeItem(
-    recipe: Recipe,
+    recipe: RecipeEntity,
     contentColor: Color,
     onClick: () -> Unit
 ) {
-    FoodLibSurface(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .clickable { onClick() },
-        contentColor = contentColor,
-        color = Color.Transparent
+            .clickable { onClick() }
     ) {
-        ConstraintLayout(Modifier.fillMaxWidth().padding(12.dp)) {
-            val (leadingIcon, text, trailingIcon) = createRefs()
-
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Icon(
+                modifier = Modifier.size(24.dp),
                 imageVector = Icons.Rounded.Search,
-                contentDescription = null,
-                modifier = Modifier.constrainAs(leadingIcon) {
-                    start.linkTo(parent.start)
-                }
+                tint = contentColor,
+                contentDescription = null
             )
             Text(
+                modifier = Modifier.weight(1f),
                 text = recipe.name,
-                modifier = Modifier.constrainAs(text) {
-                    start.linkTo(leadingIcon.end, 12.dp)
-                },
-                textAlign = TextAlign.Start,
+                color = contentColor,
+                textAlign = TextAlign.Start
             )
             Icon(
+                modifier = Modifier.size(32.dp),
                 imageVector = Icons.Rounded.KeyboardArrowRight,
-                contentDescription = null,
-                modifier = Modifier.constrainAs(trailingIcon) {
-                    end.linkTo(parent.end)
-                }
+                tint = contentColor,
+                contentDescription = null
             )
         }
-    }
-}
-
-@Preview
-@Composable
-fun RecipePreview() {
-    FoodLibTheme {
-        val list = persistentListOf(
-            Recipe("Свинная корочка"),
-            Recipe("Собака отварная"),
-            Recipe("Вода кипяченая"),
-            Recipe("Алег отбивной"),
-            Recipe("Платон")
-        )
-        BrowseList(
-            isLoading = false,
-            recipes = list,
-            onRecipeSelected = {}
-        )
     }
 }

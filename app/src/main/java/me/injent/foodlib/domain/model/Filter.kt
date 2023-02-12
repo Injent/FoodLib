@@ -15,6 +15,7 @@ class Filter(
 ) {
     val enabled = mutableStateOf(enabled)
 }
+
 val foodTypeFilters = persistentListOf(
     Filter(name = R.string.every_day),
     Filter(name = R.string.cakes),

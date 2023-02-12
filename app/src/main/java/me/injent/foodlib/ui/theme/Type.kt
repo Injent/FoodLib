@@ -18,33 +18,67 @@ package me.injent.foodlib.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import me.injent.foodlib.R
+
+val Rubik = FontFamily(
+    Font(R.font.rubik_light, weight = FontWeight.W300),
+    Font(R.font.rubik_regular, weight = FontWeight.W400),
+    Font(R.font.runik_bold, weight = FontWeight.W500)
+)
 
 // Set of Material typography styles to start with
 val Typography = Typography(
-    bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
+    headlineLarge = TextStyle(
+        fontFamily = Rubik,
+        fontWeight = FontWeight.Bold,
+        fontSize = 32.sp,
+        lineHeight = 40.sp,
         letterSpacing = 0.5.sp
-    )
-    /* Other default text styles to override
+    ),
+    headlineMedium = TextStyle(
+        fontFamily = Rubik,
+        fontWeight = FontWeight.W600,
+        fontSize = 28.sp,
+        lineHeight = 36.sp,
+        letterSpacing = 0.5.sp
+    ),
+    headlineSmall = TextStyle(
+        fontFamily = Rubik,
+        fontWeight = FontWeight.W400,
+        fontSize = 24.sp,
+        lineHeight = 32.sp,
+        letterSpacing = 0.5.sp
+    ),
     titleLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
+        fontFamily = Rubik,
+        fontWeight = FontWeight.W500,
         fontSize = 22.sp,
         lineHeight = 28.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.15.sp
     ),
-    labelSmall = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
+    bodyLarge = TextStyle(
+        fontFamily = Rubik,
+        fontWeight = FontWeight.W500,
+        fontSize = 18.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = Rubik,
+        fontWeight = FontWeight.W400,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.5.sp
+    ),
+    bodySmall = TextStyle(
+        fontFamily = Rubik,
+        fontWeight = FontWeight.W400,
+        fontSize = 14.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp
     )
-    */
 )

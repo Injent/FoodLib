@@ -19,6 +19,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt.gradle)
     alias(libs.plugins.ksp)
 }
@@ -38,6 +39,7 @@ android {
         vectorDrawables {
             useSupportLibrary = false
         }
+        signingConfig = signingConfigs.getByName("debug")
 
         // Enable room auto-migrations
         ksp {
@@ -90,12 +92,12 @@ dependencies {
     implementation(libs.androidx.lifecycle)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.datastore)
 
     // Kotlin
     implementation(libs.kotlinx.collections.immutable)
-
-    // Gson
-    implementation(libs.google.code.gson)
+    implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.serialization)
 
     // Hilt Dependency Injection
     implementation(libs.hilt.android)

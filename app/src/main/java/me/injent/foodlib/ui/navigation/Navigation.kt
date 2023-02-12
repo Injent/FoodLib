@@ -19,10 +19,10 @@ package me.injent.foodlib.ui.navigation
 import androidx.navigation.NavController
 import me.injent.foodlib.ui.navigation.FoodLibDestinations.BROWSE_ROUTE
 import me.injent.foodlib.ui.navigation.FoodLibDestinations.HOME_ROUTE
-import me.injent.foodlib.ui.navigation.FoodLibNavigationArgs.CATEGORY_ID
+import me.injent.foodlib.ui.navigation.FoodLibNavigationArgs.DRAFT_ID
 import me.injent.foodlib.ui.navigation.FoodLibNavigationArgs.RECIPE_ID
 import me.injent.foodlib.ui.navigation.FoodLibScreens.BROWSE
-import me.injent.foodlib.ui.navigation.FoodLibScreens.CATEGORY
+import me.injent.foodlib.ui.navigation.FoodLibScreens.DRAFT
 import me.injent.foodlib.ui.navigation.FoodLibScreens.HOME
 import me.injent.foodlib.ui.navigation.FoodLibScreens.RECIPE
 
@@ -30,11 +30,13 @@ private object FoodLibScreens {
     const val HOME = "home"
     const val BROWSE = "browse"
     const val RECIPE = "recipe"
+    const val DRAFT = "draft"
     const val CATEGORY = "category"
 }
 
 object FoodLibNavigationArgs {
     const val RECIPE_ID = "recipeId"
+    const val DRAFT_ID = "draftId"
     const val CATEGORY_ID = "categoryId"
 }
 
@@ -44,7 +46,7 @@ object FoodLibDestinations {
     const val RECIPE_ADD_ROUTE = "$RECIPE/{$RECIPE_ID}/add"
     const val RECIPE_EDIT_ROUTE = "$RECIPE/{$RECIPE_ID}/edit"
     const val RECIPE_DETAILS_ROUTE = "$RECIPE/{$RECIPE_ID}/details"
-    const val CATEGORY_ROUTE = "$CATEGORY/{$CATEGORY_ID}"
+    const val DRAFT_EDIT_ROUTE = "$DRAFT/{$DRAFT_ID}"
 }
 
 class NavActions(private val navController: NavController) {
@@ -54,13 +56,13 @@ class NavActions(private val navController: NavController) {
     fun navigateToBrowser() {
         navController.navigate(BROWSE_ROUTE)
     }
-    fun navigateToRecipeEdit(recipeId: Int) {
+    fun navigateToRecipeEdit(recipeId: Long) {
         navController.navigate("$RECIPE/$recipeId/edit")
+    }
+    fun navigateToDraftEdit(draftId: String) {
+        navController.navigate("$DRAFT/$draftId")
     }
     fun navigateToRecipeAdd() {
         navController.navigate("$RECIPE/-1/add")
-    }
-    fun navigateToCategory(categoryId: Int) {
-        navController.navigate("$CATEGORY/$categoryId")
     }
 }

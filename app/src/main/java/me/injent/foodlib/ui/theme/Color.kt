@@ -18,12 +18,13 @@ package me.injent.foodlib.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// TODO("Change color names")
+// TODO("Change color names to match Material 3 design system")
 
-val Background = Color(0xffeff0f6)
-val Container = Color(0xfff2f7fb)
-val LightGray = Color(0xffeeeeee)
-val Black = Color(0xff1d1d1d)
-val DarkGray = Color(0xff576379)
+val PastelRed = Color(0xFFfa6163)
+val Background = Color(0xfffaf9fc)
+val Container = Color(0xFFEDF1F5)
+val LightGray = Color(0xFFC7C7C7)
+val Black = Color(0xff353335)
+val DarkGray = Color(0xff515359)
 val Blue = Color(0xff195ac5)
 val Green = Color(0xff2cc03b)

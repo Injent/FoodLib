@@ -24,14 +24,14 @@ import androidx.compose.ui.graphics.Color
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 private val LightColorScheme = FoodLibColorScheme(
-    primary = Blue,
-    secondary = Container,
+    primary = PastelRed,
+    secondary = DarkGray,
     surface = Color.White,
     background = Background,
     container = Container,
     border = LightGray,
     textPrimary = Black,
-    textSecondary = DarkGray,
+    textSecondary = LightGray,
     textLink = Blue,
     textInteractive = Blue,
     iconPrimary = Blue,
@@ -171,10 +171,6 @@ private val LocalFoodLibColorScheme = staticCompositionLocalOf<FoodLibColorSchem
     error("No FoodLibColorPalette provided")
 }
 
-/**
- * A Material [Colors] implementation which sets all colors to [debugColor] to discourage usage of
- * [MaterialTheme.colors] in preference to [JetsnackTheme.colors].
- */
 fun debugColors(
     debugColor: Color = Color.Magenta
 ) = ColorScheme(

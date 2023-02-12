@@ -17,9 +17,113 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.injent.foodlib.ui.theme.FoodLibTheme
+
+
+@Composable
+fun LargeHeadLineText(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = FoodLibTheme.colorScheme.textPrimary,
+    maxLines: Int = 1,
+    textAlign: TextAlign? = null
+) {
+    Text(
+        modifier = modifier,
+        text = text,
+        style = MaterialTheme.typography.headlineLarge,
+        color = color,
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
+        textAlign = textAlign
+    )
+}
+
+@Composable
+fun MediumHeadLineText(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = FoodLibTheme.colorScheme.textPrimary,
+    maxLines: Int = 1,
+    textAlign: TextAlign? = null
+) {
+    Text(
+        modifier = modifier,
+        text = text,
+        style = MaterialTheme.typography.headlineMedium,
+        color = color,
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
+        textAlign = textAlign
+    )
+}
+
+@Composable
+fun LargeBodyText(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = FoodLibTheme.colorScheme.textPrimary,
+    maxLines: Int = 1,
+    textAlign: TextAlign? = null,
+    fontWeight: FontWeight? = null
+) {
+    Text(
+        modifier = modifier,
+        text = text,
+        style = MaterialTheme.typography.bodyLarge,
+        color = color,
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
+        textAlign = textAlign,
+        fontWeight = fontWeight
+    )
+}
+
+@Composable
+fun MediumBodyText(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = FoodLibTheme.colorScheme.textPrimary,
+    maxLines: Int = 1,
+    textAlign: TextAlign? = null,
+    fontWeight: FontWeight? = null
+) {
+    Text(
+        modifier = modifier,
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = color,
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
+        textAlign = textAlign,
+        fontWeight = fontWeight
+    )
+}
+
+@Composable
+fun SmallBodyText(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = FoodLibTheme.colorScheme.textPrimary,
+    maxLines: Int = 1,
+    textAlign: TextAlign? = null,
+    fontWeight: FontWeight? = null
+) {
+    Text(
+        modifier = modifier,
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = color,
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
+        textAlign = textAlign,
+        fontWeight = fontWeight
+    )
+}
 
 @Composable
 fun HeaderText(
@@ -33,6 +137,23 @@ fun HeaderText(
         fontSize = 24.sp,
         fontWeight = FontWeight.Bold,
         modifier = modifier,
+    )
+}
+
+@Composable
+fun SmallHeaderText(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = FoodLibTheme.colorScheme.textPrimary
+) {
+    Text(
+        modifier = modifier,
+        text = text,
+        color = color,
+        fontSize = 20.sp,
+        fontWeight = FontWeight.Bold,
+        overflow = TextOverflow.Ellipsis,
+        maxLines = 1
     )
 }
 

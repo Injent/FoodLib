@@ -5,16 +5,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import me.injent.foodlib.data.RecipeRepository
-import me.injent.foodlib.data.local.database.Recipe
-import me.injent.foodlib.ui.screens.home.HomeUiState
+import me.injent.foodlib.data.local.database.RecipeEntity
 import me.injent.foodlib.util.Async
 import javax.inject.Inject
 
 data class BrowseUiState(
     val isLoading: Boolean = false,
-    val filteredRecipes: List<Recipe> = emptyList()
+    val filteredRecipes: List<RecipeEntity> = emptyList()
 )
 
 @HiltViewModel
@@ -29,7 +27,7 @@ class BrowseViewModel @Inject constructor(
         recipeRepository.searchByName(text)
     }
         .map { Async.Success(it) }
-        .onStart<Async<List<Recipe>>> { emit(Async.Loading) }
+        .onStart<Async<List<RecipeEntity>>> { emit(Async.Loading) }
 
     val uiState = combine(
         _isLoading, _filteredRecipesAsync

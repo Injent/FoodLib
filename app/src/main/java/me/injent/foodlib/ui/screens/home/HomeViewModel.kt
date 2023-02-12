@@ -20,25 +20,70 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import me.injent.foodlib.data.RecipeRepository
-import me.injent.foodlib.data.local.database.Ingredient
-import me.injent.foodlib.data.local.database.Recipe
-import me.injent.foodlib.util.Async
+import me.injent.foodlib.data.UserPreferencesRepository
+import me.injent.foodlib.data.local.datastore.Draft
+import me.injent.foodlib.domain.model.Category
+import me.injent.foodlib.domain.model.Recipe
+import me.injent.foodlib.ui.navigation.FoodLibNavigationArgs.CATEGORY_ID
 import javax.inject.Inject
 
-data class HomeUiState(
-    val d: Int? = null
-)
+sealed interface RecipesByCategoryState {
+    object Loading : RecipesByCategoryState
+    object NotShown : RecipesByCategoryState
+    data class Shown(
+        val recipes: List<Recipe>
+    ) : RecipesByCategoryState
+}
+
+
+sealed interface DraftsUiState {
+    object NotShown : DraftsUiState
+    data class Shown(val drafts: List<Draft>) : DraftsUiState
+}
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val recipeRepository: RecipeRepository,
-    private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle,
+    userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
-    init {
+    private val _category = savedStateHandle.getStateFlow(CATEGORY_ID, Category.ALL)
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val recipesByCategory = _category
+        .mapLatest {
+            val recipes = recipeRepository.findByCategory(it, 12)
+                .map { entity -> Recipe(entity) }
+            if (recipes.isNotEmpty())
+                RecipesByCategoryState.Shown(recipes)
+            else
+                RecipesByCategoryState.NotShown
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = RecipesByCategoryState.Loading
+        )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val draftsUiState = userPreferencesRepository.userPreferences
+        .mapLatest {
+            if (it.drafts.isNotEmpty())
+                DraftsUiState.Shown(it.drafts.values.toList())
+            else
+                DraftsUiState.NotShown
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = DraftsUiState.NotShown
+        )
+
+    fun setCategory(category: Category) {
+        savedStateHandle[CATEGORY_ID] = category
     }
 }

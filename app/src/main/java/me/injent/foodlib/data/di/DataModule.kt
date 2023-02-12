@@ -20,8 +20,10 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import me.injent.foodlib.data.RecipeRepository
 import me.injent.foodlib.data.DefaultRecipeRepository
+import me.injent.foodlib.data.DefaultUserPreferencesRepository
+import me.injent.foodlib.data.RecipeRepository
+import me.injent.foodlib.data.UserPreferencesRepository
 import javax.inject.Singleton
 
 @Module
@@ -33,4 +35,10 @@ interface DataModule {
     fun recipeRepository(
         recipeRepository: DefaultRecipeRepository
     ): RecipeRepository
+
+    @Singleton
+    @Binds
+    fun userPreferencesRepository(
+        userPreferencesRepository: DefaultUserPreferencesRepository
+    ): UserPreferencesRepository
 }
