@@ -19,6 +19,7 @@ package me.injent.foodlib.data
 import kotlinx.coroutines.flow.Flow
 import me.injent.foodlib.data.local.database.RecipeDao
 import me.injent.foodlib.data.local.database.RecipeEntity
+import me.injent.foodlib.data.local.database.RecipeSearchEntity
 import me.injent.foodlib.domain.model.Category
 import me.injent.foodlib.domain.model.Ingredient
 import me.injent.foodlib.util.RECENT_RECIPES_LIMIT
@@ -30,7 +31,7 @@ interface RecipeRepository {
     suspend fun findById(recipeId: Long): RecipeEntity?
     suspend fun add(name: String, content: String, ingredients: List<Ingredient>, category: Category): Long
     suspend fun update(recipe: RecipeEntity)
-    suspend fun searchByName(query: String): List<RecipeEntity>
+    suspend fun searchByName(query: String): List<RecipeSearchEntity>
     suspend fun deleteRecipe(id: Long)
     suspend fun findByCategory(category: Category, limit: Int): List<RecipeEntity>
 }

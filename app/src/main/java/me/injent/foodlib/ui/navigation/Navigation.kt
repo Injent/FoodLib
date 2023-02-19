@@ -59,6 +59,9 @@ class NavActions(private val navController: NavController) {
     fun navigateToRecipeEdit(recipeId: Long) {
         navController.navigate("$RECIPE/$recipeId/edit")
     }
+    fun navigateToRecipeDetails(recipeId: Long) {
+        navController.navigate("$RECIPE/$recipeId/details")
+    }
     fun navigateToDraftEdit(draftId: String) {
         navController.navigate("$DRAFT/$draftId")
     }

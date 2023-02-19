@@ -17,9 +17,7 @@
 package me.injent.foodlib.ui.screens.home
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -68,18 +66,15 @@ fun HomeScreen(
     onCreateRecipe: () -> Unit,
     onDraftClick: (draftId: String) -> Unit
 ) {
-    val state = rememberLazyGridState()
-
-    LazyVerticalGrid(
-        modifier = Modifier.fillMaxSize(),
-        columns = GridCells.Adaptive(300.dp),
-        contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(24.dp),
-        state = state,
+        contentPadding = PaddingValues(horizontal = 16.dp)
     ) {
         item {
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -112,7 +107,6 @@ fun HomeScreen(
         filteredRecipes(
             state = filteredRecipes,
             onRecipeClicked = { recipe -> onRecipeClick(recipe.id) },
-            onCreateRecipeRequest = { onRecipeClick(-1) }
         )
     }
 }

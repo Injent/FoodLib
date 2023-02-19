@@ -49,12 +49,33 @@ fun MediumHeadLineText(
     text: String,
     color: Color = FoodLibTheme.colorScheme.textPrimary,
     maxLines: Int = 1,
-    textAlign: TextAlign? = null
+    textAlign: TextAlign? = null,
+    fontWeight: FontWeight? = null
 ) {
     Text(
         modifier = modifier,
         text = text,
         style = MaterialTheme.typography.headlineMedium,
+        color = color,
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
+        textAlign = textAlign,
+        fontWeight = fontWeight
+    )
+}
+
+@Composable
+fun SmallHeadLineText(
+    modifier: Modifier = Modifier,
+    text: String,
+    color: Color = FoodLibTheme.colorScheme.textPrimary,
+    maxLines: Int = 1,
+    textAlign: TextAlign? = null
+) {
+    Text(
+        modifier = modifier,
+        text = text,
+        style = MaterialTheme.typography.headlineSmall,
         color = color,
         maxLines = maxLines,
         overflow = TextOverflow.Ellipsis,
@@ -67,7 +88,7 @@ fun LargeBodyText(
     modifier: Modifier = Modifier,
     text: String,
     color: Color = FoodLibTheme.colorScheme.textPrimary,
-    maxLines: Int = 1,
+    maxLines: Int? = null,
     textAlign: TextAlign? = null,
     fontWeight: FontWeight? = null
 ) {
@@ -76,7 +97,7 @@ fun LargeBodyText(
         text = text,
         style = MaterialTheme.typography.bodyLarge,
         color = color,
-        maxLines = maxLines,
+        maxLines = maxLines ?: Int.MAX_VALUE,
         overflow = TextOverflow.Ellipsis,
         textAlign = textAlign,
         fontWeight = fontWeight

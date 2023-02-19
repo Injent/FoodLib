@@ -37,6 +37,7 @@ fun InputDialog(
     title: String,
     metrics: List<String>,
     initialValue: Int = 0,
+    initialMetric: String,
     onDismissRequest: () -> Unit,
     onDone: (value: Int, metric: String) -> Unit
 ) {
@@ -50,6 +51,7 @@ fun InputDialog(
                 onDone = onDone,
                 title = title,
                 value = value,
+                metric = initialMetric,
                 metrics = metrics,
             )
             LazyVerticalGrid(
@@ -95,6 +97,7 @@ private fun InputField(
     onDone: (value: Int, metric: String) -> Unit,
     title: String,
     value: String,
+    metric: String,
     metrics: List<String>
 ) {
     FoodLibSurface(
@@ -110,7 +113,10 @@ private fun InputField(
         ) {
             HeaderText(text = title)
 
-            var selectedMetric by remember { mutableStateOf(metrics[0]) }
+            var selectedMetric by remember {
+                val defaultMetric = metric.ifEmpty { metrics[0] }
+                mutableStateOf(defaultMetric)
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -176,9 +182,7 @@ fun MetricSelecter(
                         selected = selected,
                         interactionSource = MutableInteractionSource(),
                         indication = null,
-                        onClick = {
-                            onMetricSelect(metrics[index])
-                        }
+                        onClick = { onMetricSelect(metrics[index]) }
                     )
                     .background(containerColor, RoundedCornerShape(12.dp))
                     .padding(horizontal = 16.dp, vertical = 8.dp),

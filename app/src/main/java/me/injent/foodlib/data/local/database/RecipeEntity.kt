@@ -46,8 +46,8 @@ interface RecipeDao {
     fun getRecentRecipesWithoutContent(limit: Int): Flow<List<RecipeEntity>>
     @Query("SELECT * FROM recipes WHERE id =:id LIMIT 1")
     suspend fun findRecipe(id: Long): RecipeEntity
-    @Query("SELECT * FROM recipes WHERE name LIKE '%' || :query || '%' LIMIT 5")
-    suspend fun findRecipesByName(query: String): List<RecipeEntity>
+    @Query("SELECT id, name FROM recipes WHERE name LIKE '%' || :query || '%' LIMIT 4")
+    suspend fun findRecipesByName(query: String): List<RecipeSearchEntity>
     @Insert
     suspend fun insertRecipe(item: RecipeEntity): Long
     @Update(onConflict = OnConflictStrategy.REPLACE)
@@ -55,6 +55,6 @@ interface RecipeDao {
     @Query("DELETE FROM recipes WHERE id = :id")
     suspend fun deleteRecipe(id: Long)
 
-    @Query("SELECT * FROM recipes WHERE category = :category LIMIT :limit")
+    @Query("SELECT * FROM recipes WHERE category = :category OR :category = 'ALL' LIMIT :limit")
     suspend fun findByCategory(category: String, limit: Int): List<RecipeEntity>
 }

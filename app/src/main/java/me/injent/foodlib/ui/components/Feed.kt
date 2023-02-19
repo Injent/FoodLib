@@ -5,11 +5,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
@@ -17,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import me.injent.foodlib.R
@@ -26,28 +28,28 @@ import me.injent.foodlib.domain.model.Recipe
 import me.injent.foodlib.ui.screens.home.DraftsUiState
 import me.injent.foodlib.ui.screens.home.RecipesByCategoryState
 import me.injent.foodlib.ui.theme.FoodLibTheme
+import me.injent.foodlib.util.RECIPES_IN_THE_ROW
 import me.injent.foodlib.util.foodLibShadow
 import me.injent.foodlib.util.format
 import me.injent.foodlib.util.ignoreHorizontalParentPadding
 
-fun LazyGridScope.drafts(
+fun LazyListScope.drafts(
     state: DraftsUiState,
-    onDraftClick: (Draft) -> Unit,
-    contentPadding: PaddingValues = PaddingValues(16.dp)
+    onDraftClick: (Draft) -> Unit
 ) {
-    item {
-        when (state) {
-            DraftsUiState.NotShown -> Unit
-            is DraftsUiState.Shown -> {
+    when (state) {
+        DraftsUiState.NotShown -> Unit
+        is DraftsUiState.Shown -> {
+            item {
+                MediumHeadLineText(text = stringResource(id = R.string.drafts))
+            }
+            item {
                 Column {
-                    MediumHeadLineText(text = stringResource(id = R.string.drafts))
-                    Spacer(modifier = Modifier.height(8.dp))
                     val drafts = remember(state) { state.drafts }
 
                     LazyRow(
                         modifier = Modifier.ignoreHorizontalParentPadding(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = contentPadding
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         items(drafts) { draft ->
                             val date = remember { draft.editDate.format("dd.MM / HH:mm") }
@@ -102,25 +104,40 @@ private fun Draft(
     }
 }
 
-fun LazyGridScope.filteredRecipes(
+fun LazyListScope.filteredRecipes(
     state: RecipesByCategoryState,
-    onRecipeClicked: (Recipe) -> Unit,
-    onCreateRecipeRequest: () -> Unit
+    onRecipeClicked: (Recipe) -> Unit
 ) {
     item {
-        MediumHeadLineText(text = stringResource(id = R.string.popular))
+        MediumHeadLineText(text = stringResource(id = R.string.recipes))
     }
     when (state) {
         RecipesByCategoryState.Loading -> {
             item {
-
+                Box(modifier= Modifier.fillMaxSize()) {
+                    CircularProgressIndicator(
+                        color = FoodLibTheme.colorScheme.primary
+                    )
+                }
             }
         }
         is RecipesByCategoryState.Shown -> {
-            for (recipe in state.recipes) {
-                item { 
-                    RecipeItem(name = recipe.name)
+            items(state.recipes.chunked(RECIPES_IN_THE_ROW)) { recipes ->
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    for (recipe in recipes) {
+                        RecipeItem(
+                            modifier = Modifier
+                                .weight(1f),
+                            name = recipe.name,
+                            onClick = { onRecipeClicked(recipe) }
+                        )
+                    }
                 }
+            }
+            item { 
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
         RecipesByCategoryState.NotShown -> Unit
@@ -128,26 +145,34 @@ fun LazyGridScope.filteredRecipes(
 }
 
 @Composable
-fun RecipeItem(name: String) {
+fun RecipeItem(
+    modifier: Modifier = Modifier,
+    name: String,
+    onClick: () -> Unit
+) {
     Box(
-        modifier = Modifier
-            .background(
-                color = FoodLibTheme.colorScheme.surface,
-                shape = MaterialTheme.shapes.medium
-            )
+        modifier = modifier
+            .foodLibShadow()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick)
+            .background(color = FoodLibTheme.colorScheme.surface)
             .padding(16.dp)
             .sizeIn(
-                minWidth = 68.dp,
-                minHeight = 120.dp,
-                maxWidth = 68.dp,
-                maxHeight = 120.dp
+                minHeight = 160.dp,
+                maxHeight = 160.dp
             )
     ) {
-        LargeBodyText(text = name)
+        LargeBodyText(
+            modifier = Modifier
+                .align(Alignment.BottomCenter),
+            text = name,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.W300
+        )
     }
 }
 
-fun LazyGridScope.searchBar(
+fun LazyListScope.searchBar(
     onClick: () -> Unit
 ) {
     item {
@@ -183,7 +208,7 @@ fun LazyGridScope.searchBar(
     }
 }
 
-fun LazyGridScope.categories(
+fun LazyListScope.categories(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(start = 16.dp, end = 16.dp),
     onClick: (Category) -> Unit

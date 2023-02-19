@@ -62,6 +62,7 @@ fun TransparentTextField(
                 backgroundColor = FoodLibTheme.colorScheme.primary.copy(.1f)
             )
         ),
+        singleLine = maxLines == 1,
         maxLines = maxLines,
         textStyle = textStyle,
         keyboardActions = KeyboardActions(

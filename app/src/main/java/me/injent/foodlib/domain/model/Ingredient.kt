@@ -1,5 +1,6 @@
 package me.injent.foodlib.domain.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import me.injent.foodlib.util.Searchable
 
@@ -7,10 +8,9 @@ import me.injent.foodlib.util.Searchable
 data class Ingredient(
     val name: String,
     val amount: Int = 0,
-    val metric: String
+    val metric: String = "",
+    @SerialName("metrics") val availableMetrics: List<String> = emptyList()
 ) : Searchable {
-    val avalaibleMetrics: List<String> = metric.split('/')
-
     override fun doesMatchQuery(query: String): Boolean {
         return if (name.contains(" ")) {
             val matchingCombinations = name.split(" ")

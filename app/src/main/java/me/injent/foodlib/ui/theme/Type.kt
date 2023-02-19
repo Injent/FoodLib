@@ -34,49 +34,49 @@ val Rubik = FontFamily(
 val Typography = Typography(
     headlineLarge = TextStyle(
         fontFamily = Rubik,
-        fontWeight = FontWeight.Bold,
+        fontWeight = FontWeight.W500,
         fontSize = 32.sp,
         lineHeight = 40.sp,
         letterSpacing = 0.5.sp
     ),
     headlineMedium = TextStyle(
         fontFamily = Rubik,
-        fontWeight = FontWeight.W600,
-        fontSize = 28.sp,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 20.sp,
         lineHeight = 36.sp,
         letterSpacing = 0.5.sp
     ),
     headlineSmall = TextStyle(
         fontFamily = Rubik,
         fontWeight = FontWeight.W400,
-        fontSize = 24.sp,
+        fontSize = 22.sp,
         lineHeight = 32.sp,
         letterSpacing = 0.5.sp
     ),
     titleLarge = TextStyle(
         fontFamily = Rubik,
-        fontWeight = FontWeight.W500,
+        fontWeight = FontWeight.W400,
         fontSize = 22.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.15.sp
     ),
     bodyLarge = TextStyle(
         fontFamily = Rubik,
-        fontWeight = FontWeight.W500,
+        fontWeight = FontWeight.W400,
         fontSize = 18.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     ),
     bodyMedium = TextStyle(
         fontFamily = Rubik,
-        fontWeight = FontWeight.W400,
+        fontWeight = FontWeight.W300,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.5.sp
     ),
     bodySmall = TextStyle(
         fontFamily = Rubik,
-        fontWeight = FontWeight.W400,
+        fontWeight = FontWeight.W300,
         fontSize = 14.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp

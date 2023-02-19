@@ -1,5 +1,10 @@
 package me.injent.foodlib.ui.components
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,12 +18,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import me.injent.foodlib.ui.theme.FoodLibIcons
 import me.injent.foodlib.ui.theme.FoodLibTheme
+
 
 @Composable
 fun FoodLibTextButton(
@@ -89,11 +97,11 @@ fun FoodLibIconButton(
 ) {
     Row(
         modifier = modifier
+            .clip(shape)
             .background(color = color, shape = shape)
             .clickable(onClick = onClick)
-            .padding(12.dp)
-            .wrapContentWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -128,5 +136,38 @@ fun FoodLibButton(
         shape = shape
     ) {
         Text(text = text, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+fun PhotoPickerButton(
+    modifier: Modifier = Modifier,
+    onPick: (Bitmap) -> Unit
+) {
+    val context = LocalContext.current
+    val photoPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri ->
+            if (uri != null) {
+                context.contentResolver.openInputStream(uri).use { inputStream ->
+                    val bitmap = BitmapFactory.decodeStream(inputStream)
+                    onPick(bitmap)
+                }
+            }
+        }
+    )
+    IconButton(
+        modifier = modifier,
+        onClick = {
+            photoPicker.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
+        }
+    ) {
+        Icon(
+            painter = painterResource(id = FoodLibIcons.PhotoImage),
+            tint = FoodLibTheme.colorScheme.primary,
+            contentDescription = null
+        )
     }
 }

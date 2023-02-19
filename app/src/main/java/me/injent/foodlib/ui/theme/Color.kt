@@ -22,7 +22,7 @@ import androidx.compose.ui.graphics.Color
 
 val PastelRed = Color(0xFFfa6163)
 val Background = Color(0xfffaf9fc)
-val Container = Color(0xFFEDF1F5)
+val Container = Color(0xFFF3F1FD)
 val LightGray = Color(0xFFC7C7C7)
 val Black = Color(0xff353335)
 val DarkGray = Color(0xff515359)

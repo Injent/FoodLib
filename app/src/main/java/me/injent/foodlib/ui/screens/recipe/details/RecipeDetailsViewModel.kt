@@ -3,6 +3,7 @@ package me.injent.foodlib.ui.screens.recipe.details
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
@@ -18,21 +19,21 @@ sealed interface RecipeDetailsUiState {
     ) : RecipeDetailsUiState
 }
 
+@HiltViewModel
 class RecipeDetailsViewModel @Inject constructor(
     recipeRepository: RecipeRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    val recipeUiState = flow<RecipeDetailsUiState> {
-        val recipeId = savedStateHandle.get<String>(RECIPE_ID)?.toLongOrNull()
-            ?: throw RuntimeException("Illegal recipe state")
+    private val recipeId = savedStateHandle.get<String>(RECIPE_ID)?.toLong() ?: throw IllegalStateException("recipeId cannot be null")
 
+    val recipeUiState = flow<RecipeDetailsUiState> {
         val recipeEntity = recipeRepository.findById(recipeId)
 
         if (recipeEntity == null) {
             throw RuntimeException("Illegal recipe state")
         } else {
-            RecipeDetailsUiState.Success(Recipe(recipeEntity))
+            emit(RecipeDetailsUiState.Success(Recipe(recipeEntity)))
         }
     }.stateIn(
         scope = viewModelScope,
@@ -40,5 +41,11 @@ class RecipeDetailsViewModel @Inject constructor(
         initialValue = RecipeDetailsUiState.Loading
     )
 
+    fun getShareMessage(): String? {
+        val state = recipeUiState.value
+        if (state is RecipeDetailsUiState.Success) {
 
+        }
+        return null
+    }
 }

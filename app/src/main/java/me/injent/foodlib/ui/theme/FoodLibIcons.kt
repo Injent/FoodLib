@@ -18,4 +18,9 @@ object FoodLibIcons {
     val Menu = Icons.Rounded.Menu
     val Delete = Icons.Rounded.Delete
     val Save = R.drawable.ic_save
+    val ArrowBack = Icons.Rounded.ArrowBack
+    val Share = Icons.Rounded.Share
+    val Category = R.drawable.ic_category
+    val Warning = R.drawable.ic_warning
+    val PhotoImage = R.drawable.ic_photo_image
 }

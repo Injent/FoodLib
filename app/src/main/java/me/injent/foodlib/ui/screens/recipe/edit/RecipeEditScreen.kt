@@ -1,6 +1,7 @@
 package me.injent.foodlib.ui.screens.recipe.edit
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -28,12 +29,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import me.injent.foodlib.R
 import me.injent.foodlib.data.ResultOf
+import me.injent.foodlib.domain.model.Category
 import me.injent.foodlib.domain.model.Ingredient
 import me.injent.foodlib.ui.components.*
 import me.injent.foodlib.ui.theme.FoodLibIcons
@@ -59,6 +57,7 @@ fun RecipeEditScreen(
                 if (saved) onBack()
             } else {
                 viewModel.saveDraft()
+                onBack()
             }
         }
     }
@@ -90,26 +89,20 @@ fun RecipeEditScreen(
         IngredientSelecterDialog(
             searchText = searchText,
             ingredients = ingredientsFullList,
-            addedIngredients = uiState.ingredients.toImmutableList(),
-            onAdd = { viewModel.addIngredient(it) },
-            onRemove = { viewModel.removeIngredient(it) },
+            addedIngredients = uiState.ingredients,
+            onAdd = viewModel::addIngredient,
+            onRemove = viewModel::removeIngredient,
             onClose = { ingredientsDialogOpen = false; viewModel.onSearchTextChange("") },
-            onSearchTextChange = {
-                viewModel.onSearchTextChange(it)
-            }
+            onSearchTextChange = viewModel::onSearchTextChange
         )
     }
 
-    val snackbarHostState = remember { SnackbarHostState() }
-
     Scaffold(
-        modifier = Modifier,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             LocalTopAppBar(
                 recipeName = uiState.name,
                 onClose = onBackLogic,
-                onNameChanged = { viewModel.updateName(it) },
+                onNameChanged = viewModel::updateName,
                 onDeleteRequest = {
                     onBack()
                     viewModel.deleteDraftOrRecipe()
@@ -129,21 +122,49 @@ fun RecipeEditScreen(
                 .padding(paddingValues),
             isLoading = uiState.isLoading,
             ingredients = uiState.ingredients,
-            onIngredientChange = { viewModel.updateIngredient(it) },
-            onContentChange = { viewModel.updateContent(it) },
+            onEditIngredientClick = viewModel::startIngredientEditing,
+            onContentChange = viewModel::updateContent,
             onIngredientDelete = { viewModel.removeIngredient(it.name) },
             onAddIngredient = { ingredientsDialogOpen = true },
-            content = uiState.content
+            selectedCategory = uiState.category,
+            onSelectCategory = viewModel::selectCategory,
+            content = uiState.content,
+            onPhotoPick = viewModel::onPhotoPick
         )
     }
 
-    // TODO("Create custom snackbar")
     uiState.userMessage?.let { userMessage ->
-        val snackbarText = stringResource(userMessage)
-        LaunchedEffect(snackbarHostState, viewModel, userMessage, snackbarText) {
-            snackbarHostState.showSnackbar(snackbarText)
-            viewModel.snackbarMessageShown()
+        Box(modifier = Modifier.fillMaxSize()) {
+            val snackbarHostState = remember { SnackbarHostState() }
+            val snackbarText = stringResource(userMessage)
+
+            LaunchedEffect(snackbarHostState, viewModel, userMessage, snackbarText) {
+                snackbarHostState.showSnackbar(snackbarText)
+                viewModel.snackbarMessageShown()
+            }
+
+            SnackbarHost(
+                modifier=Modifier.align(Alignment.BottomStart),
+                hostState = snackbarHostState
+            ) {
+                FoodLibSnackBar(
+                    drawableRes = FoodLibIcons.Warning,
+                    message = snackbarText
+                )
+            }
         }
+    }
+
+    val currentEditingIngredient by viewModel.currentEditingIngredient.collectAsStateWithLifecycle()
+    currentEditingIngredient?.let {
+        InputDialog(
+            title = stringResource(id = R.string.set_amount),
+            initialValue = it.amount,
+            initialMetric = it.metric,
+            metrics = it.availableMetrics,
+            onDismissRequest = viewModel::finishIngredientEditing,
+            onDone = viewModel::finishIngredientEditing
+        )
     }
 }
 
@@ -152,10 +173,13 @@ private fun AddEditRecipeContent(
     modifier: Modifier = Modifier,
     isLoading: Boolean,
     ingredients: List<Ingredient>,
-    onIngredientChange: (Ingredient) -> Unit,
+    onEditIngredientClick: (Ingredient) -> Unit,
     onIngredientDelete: (Ingredient) -> Unit,
     onContentChange: (String) -> Unit,
     onAddIngredient: () -> Unit,
+    onPhotoPick: (Bitmap) -> Unit,
+    onSelectCategory: (Category) -> Unit,
+    selectedCategory: Category,
     content: String
 ) {
     if (isLoading) {
@@ -172,11 +196,29 @@ private fun AddEditRecipeContent(
                     modifier = Modifier
                         .padding(16.dp)
                         .clip(RoundedCornerShape(12.dp)),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    var categorySelectDialogOpen by remember { mutableStateOf(false) }
+                    if (categorySelectDialogOpen) {
+                        CategorySelecter(
+                            selectedCategory = selectedCategory,
+                            categories = Category.values().toList(),
+                            onSelectCategory = { onSelectCategory(it); categorySelectDialogOpen = false },
+                            onClose = { categorySelectDialogOpen = false }
+                        )
+                    }
+
+                    FoodLibIconButton(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        onClick = { categorySelectDialogOpen = true },
+                        drawable = FoodLibIcons.Category,
+                        shape = RoundedCornerShape(12.dp),
+                        text = "${stringResource(id = R.string.category)}: ${stringResource(id = selectedCategory.displayName)}"
+                    )
                     Ingredients(
                         ingredients = ingredients,
-                        onIngredientChange = onIngredientChange,
+                        onEditIngredientClick = onEditIngredientClick,
                         onDelete = onIngredientDelete,
                         onAddIngredient = onAddIngredient
                     )
@@ -193,7 +235,17 @@ private fun AddEditRecipeContent(
                 textStyle = MaterialTheme.typography.bodyLarge,
                 onFocusChange = { textFieldFullSize = it.isFocused }
             )
-            Spacer(modifier = Modifier.conditional(!textFieldFullSize) { weight(.2f) })
+            Box(
+                modifier = Modifier
+                    .conditional(!textFieldFullSize) { weight(.2f) }
+            ) {
+                PhotoPickerButton(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(end = 16.dp, top = 16.dp),
+                    onPick = onPhotoPick
+                )
+            }
         }
     }
 }
@@ -201,21 +253,15 @@ private fun AddEditRecipeContent(
 @Composable
 private fun Ingredients(
     ingredients: List<Ingredient>,
-    onIngredientChange: (Ingredient) -> Unit,
+    onEditIngredientClick: (Ingredient) -> Unit,
     onAddIngredient: () -> Unit,
     onDelete: (Ingredient) -> Unit
 ) {
-    var editableIngredient by remember { mutableStateOf<Ingredient?>(null) }
-    var inputDialogOpen by remember { mutableStateOf(false) }
-
     for (ingredient in ingredients) {
         val isLast = remember(ingredients) { ingredients.last() == ingredient }
         EditableIngredient(
             ingredient = ingredient,
-            onEdit = {
-                editableIngredient = ingredient
-                inputDialogOpen = true
-            },
+            onEdit = { onEditIngredientClick(ingredient) },
             isLast = isLast,
             onDelete = { onDelete(ingredient) }
         )
@@ -228,25 +274,6 @@ private fun Ingredients(
         shape = RoundedCornerShape(12.dp),
         text = stringResource(id = R.string.add_ingredient)
     )
-
-    if (inputDialogOpen && editableIngredient != null) {
-        val scope = rememberCoroutineScope()
-
-        InputDialog(
-            title = stringResource(id = R.string.set_amount),
-            initialValue = editableIngredient!!.amount,
-            metrics = editableIngredient!!.avalaibleMetrics,
-            onDismissRequest = { inputDialogOpen = false },
-            onDone = { value, metric ->
-                inputDialogOpen = false
-                onIngredientChange(editableIngredient!!.copy(amount = value, metric = metric))
-                scope.launch {
-                    delay(1000)
-                    editableIngredient = null
-                }
-            }
-        )
-    }
 }
 
 @Composable
@@ -379,6 +406,50 @@ private fun LocalTopAppBar(
     )
 }
 
+@Composable
+private fun CategorySelecter(
+    selectedCategory: Category,
+    categories: List<Category>,
+    onSelectCategory: (Category) -> Unit,
+    onClose: () -> Unit
+) {
+    Dialog(onDismissRequest = onClose) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    color = FoodLibTheme.colorScheme.surface,
+                    shape = MaterialTheme.shapes.medium
+                )
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            SmallHeadLineText(text = stringResource(id = R.string.categories))
+            for (category in categories) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val selected = category == selectedCategory
+                    RadioButton(
+                        selected = selected,
+                        onClick = {
+                            onSelectCategory(category)
+                        },
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = FoodLibTheme.colorScheme.primary,
+                            unselectedColor = FoodLibTheme.colorScheme.secondary
+                        )
+                    )
+                    LargeBodyText(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = stringResource(id = category.displayName)
+                    )
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class,
     ExperimentalFoundationApi::class
 )
@@ -387,7 +458,7 @@ fun IngredientSelecterDialog(
     ingredients: List<Ingredient>,
     searchText: String,
     onSearchTextChange: (String) -> Unit,
-    addedIngredients: ImmutableList<Ingredient>,
+    addedIngredients: List<Ingredient>,
     onAdd: (Ingredient) -> Unit,
     onRemove: (name: String) -> Unit,
     onClose: () -> Unit
@@ -455,12 +526,8 @@ fun IngredientSelecterDialog(
                             ),
                         ingredientName = ingredient.name,
                         added = added,
-                        onAdd = {
-                            onAdd(ingredient)
-                        },
-                        onRemove = {
-                            onRemove(ingredient.name)
-                        }
+                        onAdd = { onAdd(ingredient) },
+                        onRemove = { onRemove(ingredient.name) }
                     )
                 }
             }

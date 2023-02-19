@@ -21,10 +21,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
 import me.injent.foodlib.R
-import me.injent.foodlib.data.local.database.RecipeEntity
+import me.injent.foodlib.data.local.database.RecipeSearchEntity
 import me.injent.foodlib.ui.components.FoodLibSearchBar
 import me.injent.foodlib.ui.navigation.NavActions
 import me.injent.foodlib.ui.theme.FoodLibTheme
@@ -49,16 +47,14 @@ fun BrowseScreen(
             contentColor = FoodLibTheme.colorScheme.textPrimary,
             placeholder = stringResource(id = R.string.search_hint),
             hintColor = FoodLibTheme.colorScheme.textSecondary.copy(.75f),
-            onValueChanged = {
-                viewModel.setSearchText(it)
-            },
+            onValueChanged = viewModel::setSearchText,
             focusedOnInit = true,
-            onDismiss = { navActions.navigateToHome() }
+            onDismiss = navActions::navigateToHome
         )
         BrowseList(
             isLoading = uiState.isLoading,
-            recipes = uiState.filteredRecipes.toImmutableList(),
-            onRecipeSelected = { navActions.navigateToRecipeEdit(it.id) }
+            recipes = uiState.filteredRecipes,
+            onRecipeSelected = { navActions.navigateToRecipeDetails(it) }
         )
     }
 }
@@ -67,8 +63,8 @@ fun BrowseScreen(
 fun BrowseList(
     modifier: Modifier = Modifier,
     isLoading: Boolean,
-    recipes: ImmutableList<RecipeEntity>,
-    onRecipeSelected: (recipe: RecipeEntity) -> Unit
+    recipes: List<RecipeSearchEntity>,
+    onRecipeSelected: (id: Long) -> Unit
 ) {
     if (isLoading) Text(text = "Loading...")
     LazyColumn(
@@ -76,8 +72,8 @@ fun BrowseList(
     ) {
         items(recipes) { recipe ->
             RecipeItem(
-                recipe = recipe,
-                onClick = { onRecipeSelected(recipe) },
+                name = recipe.name,
+                onClick = { onRecipeSelected(recipe.id) },
                 contentColor = FoodLibTheme.colorScheme.textPrimary
             )
         }
@@ -86,7 +82,7 @@ fun BrowseList(
 
 @Composable
 private fun RecipeItem(
-    recipe: RecipeEntity,
+    name: String,
     contentColor: Color,
     onClick: () -> Unit
 ) {
@@ -109,7 +105,7 @@ private fun RecipeItem(
             )
             Text(
                 modifier = Modifier.weight(1f),
-                text = recipe.name,
+                text = name,
                 color = contentColor,
                 textAlign = TextAlign.Start
             )

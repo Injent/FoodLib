@@ -1,6 +1,8 @@
 package me.injent.foodlib.ui.screens.recipe.edit
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,6 +26,7 @@ import me.injent.foodlib.ui.navigation.FoodLibNavigationArgs.RECIPE_ID
 import java.util.*
 import javax.inject.Inject
 
+
 data class AddEditRecipeUiState(
     val isLoading: Boolean = false,
     val name: String = "",
@@ -31,7 +34,7 @@ data class AddEditRecipeUiState(
     val content: String = "",
     val category: Category = Category.ALL,
     val isRecipeSaved: Boolean = false,
-    val userMessage: Int? = null
+    val userMessage: Int? = null,
 )
 
 @HiltViewModel
@@ -82,6 +85,9 @@ class RecipeViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(AddEditRecipeUiState())
     val uiState: StateFlow<AddEditRecipeUiState> = _uiState.asStateFlow()
+
+    private val _currentEditingIngredient = MutableStateFlow<Ingredient?>(null)
+    val currentEditingIngredient = _currentEditingIngredient.asStateFlow()
 
     init {
         if (isLoadedFromDatabase)
@@ -148,6 +154,13 @@ class RecipeViewModel @Inject constructor(
         )
     }
 
+    fun selectCategory(category: Category) = _uiState.update {
+        it.copy(
+            category = category,
+            isRecipeSaved = false
+        )
+    }
+
     fun deleteDraftOrRecipe() = viewModelScope.launch {
         if (recipeId != -1L)
             recipeRepository.deleteRecipe(recipeId)
@@ -156,7 +169,7 @@ class RecipeViewModel @Inject constructor(
         }
     }
 
-    fun updateIngredient(ingredient: Ingredient) {
+    private fun updateIngredient(ingredient: Ingredient) {
         _uiState.update {
             val current = it.ingredients.find { i -> i.name == ingredient.name }
             val index = it.ingredients.indexOf(current)
@@ -167,6 +180,27 @@ class RecipeViewModel @Inject constructor(
                 isRecipeSaved = false
             )
         }
+    }
+
+    fun startIngredientEditing(ingredient: Ingredient) {
+        _currentEditingIngredient.value = ingredient
+    }
+
+    fun onPhotoPick(bitmap: Bitmap) {
+
+    }
+
+    fun finishIngredientEditing(amount: Int, metric: String) {
+        val updatedIngredient = _currentEditingIngredient.value?.copy(
+            amount = amount,
+            metric = metric
+        ) ?: return
+        updateIngredient(updatedIngredient)
+        _currentEditingIngredient.value = null
+    }
+
+    fun finishIngredientEditing() {
+        _currentEditingIngredient.value = null
     }
 
     private fun deleteDraft(draftId: String) = viewModelScope.launch {
@@ -226,6 +260,7 @@ class RecipeViewModel @Inject constructor(
                             name = draft.name,
                             ingredients = draft.ingredients,
                             content = draft.content,
+                            category = draft.category,
                             isRecipeSaved = false
                         )
                     }
